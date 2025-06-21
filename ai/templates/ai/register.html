@@ -1,0 +1,62 @@
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <style>
+        .formContainer {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .formItem {
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class='formContainer'>
+        <form method='POST' action="/ai/register">
+            <div class='formItem'>
+                <label for='name'>이름</label>
+                <input id='name' name='name' />
+            </div>
+            <div class='formItem'>
+                <label>성별</label>
+                <input name='gender' type='radio' value='MALE'>남성</input>
+                <input name='gender' type='radio' value='FEMALE'/>여성
+            </div>
+            <div class='formItem'>
+                <label for='registrationNo'>등록번호</label>
+                <input id='registrationNo' name='registration_no'/>
+            </div>
+            <div class='formItem'>
+                <label for='kind'>동물종</label>
+                <input id='kind' name='kind'/>
+            </div>
+            <div class='formItem'>
+                <label>중성화여부</label>
+                <input name='is_neutering' type='radio' value=true/>네
+                <input name='is_neutering' type='radio' value=false/>아니오
+            </div>
+            <div class='formItem'>
+                <label>분실여부</label>
+                <input name='is_lost' type='radio' value=true/>네
+                <input name='is_lost' type='radio' value=false/>아니오
+            </div>
+            <div class='formItem'>
+                <label>접종여부</label>
+                <input name='is_inoculation' type='radio' value=true/>네
+                <input name='is_inoculation' type='radio' value=false/>아니오
+            </div>
+            <button type='submit'>다음</button>
+        </form>
+    </div>
+    <div>
+        <video />
+    </div>
+</body>
+</html>

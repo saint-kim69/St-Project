@@ -1,0 +1,136 @@
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <style>
+    .container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .video {
+      width: 100%;
+      height: 300px;
+    }
+
+    .button {
+      width: 100px;
+      height: 30px;
+      margin: 1rem;
+    }
+
+    .buttonContainer {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div class='container'>
+    <video class='video' id="video"  autoplay playsinline></video>
+    <canvas id="canvas" width="1280" height="720" style="display: none;"></canvas>
+    <div class='buttonContainer'>
+      <button class='button' id="startButton">시작</button>
+      <button class='button' id="stopButton">정지</button>
+    </div>
+  </div>
+  <p id='result'></p>
+</body>
+<script>
+// 필요한 변수 선언
+let video = document.getElementById('video');
+let canvas = document.getElementById('canvas');
+let ctx = canvas.getContext('2d');
+let resultP = document.getElementById('result')
+let startButton = document.getElementById('startButton');
+let stopButton = document.getElementById('stopButton');
+let captureInterval;
+let stream;
+const socket = new WebSocket('ws://' + window.location.hostname + ':8001' + '/ai/detect/' + window.location.pathname.split('/')[3])
+
+socket.onopen = () => {
+  console.log('WebSocket 연결 성공')
+} 
+
+socket.onerror = (error) => {
+  console.log("WebSocket error: ", event.message)
+}
+
+socket.onmessage = (event) => {
+  console.log('서버로부터 메시지 수신: ', event.data)
+  let json_data = JSON.parse(event.data)
+  resultP.textContent = json_data.message
+}
+
+// 시작 버튼 클릭 이벤트
+startButton.addEventListener('click', startCapturing);
+// 정지 버튼 클릭 이벤트
+stopButton.addEventListener('click', stopCapturing);
+
+// 카메라 캡처 시작 함수
+async function startCapturing() {
+  try {
+    console.log(navigator.mediaDevices)
+    // 카메라 스트림 가져오기
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        facingMode: 'environment' // 전면 카메라 사용 (후면 카메라는 'environment')
+      },
+      audio: false
+    });
+    // 비디오 요소에 스트림 연결
+    video.srcObject = stream;
+    
+    // 0.5초(500ms)마다 프레임 캡처
+    captureInterval = setInterval(captureFrame, 500);
+    
+    console.log('카메라 캡처 시작');
+    startButton.disabled = true;
+    stopButton.disabled = false;
+  } catch (error) {
+    alert(error)
+    console.error('카메라 접근 오류:', error);
+  }
+}
+
+// 카메라 캡처 정지 함수
+function stopCapturing() {
+  if (captureInterval) {
+    clearInterval(captureInterval);
+  }
+  
+  if (stream) {
+    // 모든 트랙 정지
+    stream.getTracks().forEach(track => track.stop());
+    video.srcObject = null;
+  }
+  
+  console.log('카메라 캡처 정지');
+  startButton.disabled = false;
+  stopButton.disabled = true;
+}
+
+// 프레임 캡처 및 처리 함수
+async function captureFrame() {
+  // 비디오의 현재 프레임을 캔버스에 그리기
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  
+  // 캔버스에서 이미지 데이터 가져오기
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  try{
+    socket.send(JSON.stringify({"image": canvas.toDataURL('image/jpeg', 0.7)}))
+  }catch(e){
+    alert(e)
+  }
+}
+
+// 페이지 언로드 시 리소스 정리
+window.addEventListener('beforeunload', () => {
+  stopCapturing();
+});
+</script>
+</html>

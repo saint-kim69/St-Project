@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+  web:
+    image: web
+    ports:
+      - "8000:8000"
+  
+  socket:
+    image: socket
+    ports:
+      - "8001:8001"
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    restart: always

@@ -1,0 +1,179 @@
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1"
+  />
+  <style>
+    .container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .video {
+      width: 100%;
+      height: 300px;
+    }
+
+    .button {
+      width: 100px;
+      height: 30px;
+      margin: 1rem;
+    }
+
+    .buttonContainer {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <div class='container'>
+    <video id="video" class='video' autoplay playsinline></video>
+    <canvas id="canvas" width="1920" height="1080" style="display: none;"></canvas>
+    <div class='buttonContainer'>
+      <button class='button' id="startButton">카메라 ON</button>
+      <button class='button' id='stopButton'>카메라 OFF</button>
+    </div>
+    <div>
+      <p id='name'>이름: </p>
+      <p id='gender'>성별: </p>
+      <p id='kind'>품종: </p>
+      <p id='registrationNo'>등록번호: </p>
+      <p id='isNeutering'>중성화 여부: </p>
+      <p id='isLost'>분실여부: </p>
+      <p id='isInoculation'>접종여부: </p>
+      <p id='score'>유사도점수: </p>
+    </div>
+    
+  </div>
+</body>
+<script>
+// 필요한 변수 선언
+let video = document.getElementById('video');
+let canvas = document.getElementById('canvas');
+let ctx = canvas.getContext('2d');
+let startButton = document.getElementById('startButton');
+let stopButton = document.getElementById('stopButton');
+let nameP = document.getElementById('name');
+let genderP = document.getElementById('gender');
+let kindP = document.getElementById('kind');
+let registrationNoP = document.getElementById('registrationNo');
+let isNeuteringP = document.getElementById('isNeutering');
+let isLostP = document.getElementById('isLost');
+let isInoculationP = document.getElementById('isInoculation');
+let scoreP = document.getElementById('score');
+let captureInterval;
+let stream;
+
+
+const socket = new WebSocket('ws://' + window.location.hostname + ':8001' + '/ai/find-animal/' + Math.floor(Math.random()* 1000))
+
+
+socket.onopen = () => {
+  console.log('WebSocket 연결 성공')
+} 
+
+socket.onerror = (error) => {
+  console.log("WebSocket error: ", event.message)
+}
+
+
+socket.onmessage = (event) => {
+  console.log('서버로부터 메시지 수신: ', event.data)
+  let json_data = JSON.parse(event.data)
+  changeStatus(
+    json_data.name, 
+    json_data.gender, 
+    json_data.kind, 
+    json_data.registrationNo, 
+    json_data.isNeutering, 
+    json_data.isLost, 
+    json_data.isInoculation, 
+    json_data.score
+  )
+}
+
+// 시작 버튼 클릭 이벤트
+startButton.addEventListener('click', startCapturing);
+// 정지 버튼 클릭 이벤트
+stopButton.addEventListener('click', stopCapturing);
+
+// 카메라 캡처 시작 함수
+async function startCapturing() {
+  try {
+    // 카메라 스트림 가져오기
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        facingMode: 'environment' // 전면 카메라 사용 (후면 카메라는 'environment')
+      },
+      audio: false
+    });
+    
+    // 비디오 요소에 스트림 연결
+    video.srcObject = stream;
+    
+    // 0.5초(500ms)마다 프레임 캡처
+    captureInterval = setInterval(captureFrame, 1000);
+    
+    console.log('카메라 캡처 시작');
+    startButton.disabled = true;
+    stopButton.disabled = false;
+  } catch (error) {
+    console.error('카메라 접근 오류:', error);
+  }
+}
+
+// 카메라 캡처 정지 함수
+function stopCapturing() {
+  if (captureInterval) {
+    clearInterval(captureInterval);
+  }
+  
+  if (stream) {
+    // 모든 트랙 정지
+    stream.getTracks().forEach(track => track.stop());
+    video.srcObject = null;
+  }
+  
+  console.log('카메라 캡처 정지');
+  startButton.disabled = false;
+  stopButton.disabled = true;
+}
+
+// 프레임 캡처 및 처리 함수
+async function captureFrame() {
+  // 비디오의 현재 프레임을 캔버스에 그리기
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  
+  try{
+    socket.send(JSON.stringify({"image": canvas.toDataURL('image/jpeg', 1)}))
+  }catch(e){
+    alert(e)
+  }
+}
+
+// 프레임 처리 함수 (필요에 따라 구현)
+
+async function changeStatus(name, gender, kind, registrationNo, isNeutering, isLost, isInoculation, score){
+  nameP.textContent = `이름: ${name}`
+  genderP.textContent = `성별: ${gender}`
+  kindP.textContent = `품종: ${kind}`
+  registrationNoP.textContent = `등록번호: ${registrationNo}`
+  isNeuteringP.textContent = `중성화여부: ${isNeutering}`
+  isLostP.textContent = `분실여부: ${isLost}`
+  isInoculationP.textContent = `접종여부: ${isInoculation}`
+  scoreP.textContent = `유사도: ${score}`
+}
+
+// 페이지 언로드 시 리소스 정리
+window.addEventListener('beforeunload', () => {
+  stopCapturing();
+});
+</script>
+</html>

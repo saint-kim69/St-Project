@@ -1,0 +1,21 @@
+FROM python:3.12.10-slim
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1
+# Ensures Python output is sent straight to terminal without buffering
+ENV PYTHONUNBUFFERED=1
+
+RUN pip install --upgrade pip
+
+RUN apt-get update && apt-get -y install libpq-dev gcc libsm6 libxext6 libgl1-mesa-glx libglib2.0-0
+
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 8000
+
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8001", "config.asgi:application"]
