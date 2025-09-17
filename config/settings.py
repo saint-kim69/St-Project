@@ -153,7 +153,6 @@ CHANNEL_LAYERS = {
 # YOLO
 MODEL_DIR_PATH = os.path.join(BASE_DIR, "model")
 
-YOLOV4_CONFIG = os.path.join(MODEL_DIR_PATH, "yolov4.cfg")
-YOLOV4_WEIGHTS = os.path.join(MODEL_DIR_PATH, "yolov4_final.weights")
-YOLOV4_CLASSES = os.path.join(MODEL_DIR_PATH, "set_weights.yaml")
+YOLOV8_WEIGHTS = os.path.join(MODEL_DIR_PATH, "yolov8.pt")
+YOLO_CLASSES = os.path.join(MODEL_DIR_PATH, "set_weights.yaml")
 EVAL_DATA_PATH = os.path.join(BASE_DIR, "eval")
